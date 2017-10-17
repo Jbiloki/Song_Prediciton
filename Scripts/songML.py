@@ -62,11 +62,11 @@ for col in cols:
 
 #model = neighbors.KNeighborsClassifier(15)
 #colnorm = ['msno','song_id', 'source_screen_name', 'source_type', 'artist_name']
-#features = train.columns.values
+features = train.columns.values
 
-#for feature in features:
-#    mean, std = train[feature].mean(), train[feature].std()
-#    train.loc[:,feature] = (train[feature] - mean) / std
+for feature in features:
+    mean, std = train[feature].mean(), train[feature].std()
+    train.loc[:,feature] = (train[feature] - mean) / std
 
 #scaler = MinMaxScaler()
 #x_scaled = scaler.fit_transform(x)
@@ -89,8 +89,8 @@ training_epocs = 20
 training_dropout = 0.9
 display_step = 1
 n_samples = y_train.shape[0]
-batch_size = 2046
-learning_rate = 0.4
+batch_size = 5000
+learning_rate = 0.5
 
 input_nodes = 8
 
@@ -113,7 +113,7 @@ with tf.name_scope('Model'):
     y_ = tf.placeholder(tf.float32,[None, 2], name = 'labels')
     #Hidden Layers
     l1 = hidden_layer(x, input_nodes, hidden_nodes1, activation = 'soft')
-    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2)
+    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2, activation = 'soft')
     l3 = hidden_layer(l2, hidden_nodes2, hidden_nodes3, drop = True, pk = percent_keep, activation = 'soft')
     lout = hidden_layer(l3, hidden_nodes3, 2, activation = 'soft')
     out = lout
@@ -135,8 +135,7 @@ tf.summary.FileWriterCache.clear()
 
 
 with tf.Session() as sess:
-    
-    writer = tf.summary.FileWriter('./graph10', graph = sess.graph)
+    writer = tf.summary.FileWriter('./graph12', graph = sess.graph)
     sess.run(tf.global_variables_initializer())
     for epoch in range(training_epocs):
         for batch in range(int(n_samples/batch_size)):
