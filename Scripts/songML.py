@@ -61,12 +61,12 @@ for col in cols:
 
 #model = neighbors.KNeighborsClassifier(15)
 #colnorm = ['msno','song_id', 'source_screen_name', 'source_type', 'artist_name']
-features = train.columns.values
+#features = train.columns.values
 
-for feature in features:
-    mean, std = train[feature].mean(), train[feature].std()
-    train.loc[:,feature] = (train[feature] - mean) / std
-x = train.values
+#for feature in features:
+#    mean, std = train[feature].mean(), train[feature].std()
+#    train.loc[:,feature] = (train[feature] - mean) / std
+
 #scaler = MinMaxScaler()
 #x_scaled = scaler.fit_transform(x)
 
@@ -85,11 +85,11 @@ print("Training the model...")
 #PARAMS#
 
 training_epocs = 20
-training_dropout = 0.8
+training_dropout = 0.9
 display_step = 1
 n_samples = y_train.shape[0]
-batch_size = 4096
-learning_rate = 0.5
+batch_size = 2046
+learning_rate = 0.4
 
 input_nodes = 8
 
@@ -109,10 +109,10 @@ with tf.name_scope('Model'):
     #Inputs
     x = tf.placeholder(tf.float32, [None, input_nodes], name='Inputs')
     #Labels
-    y_ = tf.placeholder(tf.float32,[None, 2], name = 'labels')#, )
+    y_ = tf.placeholder(tf.float32,[None, 2], name = 'labels')
     #Hidden Layers
     l1 = hidden_layer(x, input_nodes, hidden_nodes1, activation = 'soft')
-    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2, activation = 'soft')
+    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2, activation = 'relu')
     l3 = hidden_layer(l2, hidden_nodes2, hidden_nodes3, drop = True, pk = percent_keep, activation = 'soft')
     lout = hidden_layer(l3, hidden_nodes3, 2)
     out = tf.nn.softmax(lout)
@@ -124,7 +124,7 @@ with tf.name_scope('cost'):
     #cost = cross_entropy
 
 with tf.name_scope('train'):
-    optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
 
 with tf.name_scope('accuracy'):
     correct_pred = tf.equal(tf.argmax(out,1), tf.argmax(y_,1))
