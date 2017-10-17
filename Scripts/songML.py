@@ -32,7 +32,8 @@ def hidden_layer(x, channels_in, channels_out,activation = None, pk = None, drop
 
 
 print("Reading data...")
-
+tf.reset_default_graph()
+tf.Graph().as_default()
 train = pd.read_csv("../Data/train.csv")
 songs = pd.read_csv("../Data/songs.csv")
 #members = pd.read_csv("../Data/members.csv", parse_dates = True, infer_datetime_format = True)
@@ -112,10 +113,10 @@ with tf.name_scope('Model'):
     y_ = tf.placeholder(tf.float32,[None, 2], name = 'labels')
     #Hidden Layers
     l1 = hidden_layer(x, input_nodes, hidden_nodes1, activation = 'soft')
-    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2, activation = 'relu')
+    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2)
     l3 = hidden_layer(l2, hidden_nodes2, hidden_nodes3, drop = True, pk = percent_keep, activation = 'soft')
-    lout = hidden_layer(l3, hidden_nodes3, 2)
-    out = tf.nn.softmax(lout)
+    lout = hidden_layer(l3, hidden_nodes3, 2, activation = 'soft')
+    out = lout
 
 with tf.name_scope('cost'):
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits = out, labels = y_)
@@ -124,7 +125,7 @@ with tf.name_scope('cost'):
     #cost = cross_entropy
 
 with tf.name_scope('train'):
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
 
 with tf.name_scope('accuracy'):
     correct_pred = tf.equal(tf.argmax(out,1), tf.argmax(y_,1))
@@ -134,7 +135,8 @@ tf.summary.FileWriterCache.clear()
 
 
 with tf.Session() as sess:
-    #writer = tf.summary.FileWriter('./graph7', graph = sess.graph)
+    
+    writer = tf.summary.FileWriter('./graph10', graph = sess.graph)
     sess.run(tf.global_variables_initializer())
     for epoch in range(training_epocs):
         for batch in range(int(n_samples/batch_size)):
@@ -147,7 +149,7 @@ with tf.Session() as sess:
                  "Train Loss: ", c,
                  "Accuracy: ", acc,
                  "Output: ", output)
-    #writer.close()
+    writer.close()
     print("Test Accuracy: ", accuracy.eval(feed_dict={x: x_test, y_: y_test, percent_keep: training_dropout}))
     
        
