@@ -23,6 +23,8 @@ def hidden_layer(x, channels_in, channels_out,activation = None, pk = None, drop
             act = tf.nn.sigmoid(tf.matmul(x,W) + b)
         if activation is 'soft':
             act = tf.nn.softmax(tf.matmul(x,W) + b)
+        if activation is 'tanh':
+            act = tf.nn.tanh(tf.matmul(x,W) + b)
         else:
             act = tf.matmul(x, W) + b
         if drop is True:
@@ -69,7 +71,7 @@ for feature in features:
     train.loc[:,feature] = (train[feature] - mean) / std
 
 #scaler = MinMaxScaler()
-#x_scaled = scaler.fit_transform(x)
+#train = scaler.fit_transform(train)
 
 #train = pd.DataFrame(x_scaled)
 
@@ -84,13 +86,12 @@ print("Training the model...")
 ## NEURAL NET ##
 
 #PARAMS#
-
-training_epocs = 20
+training_epocs = 2000
 training_dropout = 0.9
 display_step = 1
 n_samples = y_train.shape[0]
-batch_size = 5000
-learning_rate = 0.5
+batch_size = 2046
+learning_rate = 0.35
 
 input_nodes = 8
 
@@ -100,7 +101,7 @@ multiplier = 1.5
 
 hidden_nodes1 = 18
 hidden_nodes2 = round(hidden_nodes1 * multiplier)
-hidden_nodes3 = round(hidden_nodes2 * multiplier)
+hidden_nodes3 = 18#round(hidden_nodes2 * multiplier)
 
 #Percent of nodes to keep during dropout
 percent_keep = tf.placeholder(tf.float32, name = 'percent_keep')
@@ -113,7 +114,7 @@ with tf.name_scope('Model'):
     y_ = tf.placeholder(tf.float32,[None, 2], name = 'labels')
     #Hidden Layers
     l1 = hidden_layer(x, input_nodes, hidden_nodes1, activation = 'soft')
-    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2, activation = 'soft')
+    l2 = hidden_layer(l1, hidden_nodes1, hidden_nodes2, activation = 'relu')
     l3 = hidden_layer(l2, hidden_nodes2, hidden_nodes3, drop = True, pk = percent_keep, activation = 'soft')
     lout = hidden_layer(l3, hidden_nodes3, 2, activation = 'soft')
     out = lout
@@ -123,10 +124,9 @@ with tf.name_scope('cost'):
     cost = tf.reduce_mean(cross_entropy)
     #cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
     #cost = cross_entropy
-
 with tf.name_scope('train'):
     optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
-
+    
 with tf.name_scope('accuracy'):
     correct_pred = tf.equal(tf.argmax(out,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
@@ -146,8 +146,7 @@ with tf.Session() as sess:
            acc, c, output = sess.run([accuracy,cost, out], feed_dict={x: x_train, y_: y_train, percent_keep: training_dropout})
            print("Epoch: ", epoch,
                  "Train Loss: ", c,
-                 "Accuracy: ", acc,
-                 "Output: ", output)
+                 "Accuracy: ", acc)
     writer.close()
     print("Test Accuracy: ", accuracy.eval(feed_dict={x: x_test, y_: y_test, percent_keep: training_dropout}))
     
